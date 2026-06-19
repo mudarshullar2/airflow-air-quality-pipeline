@@ -1,9 +1,15 @@
 from datetime import datetime
 from airflow.sdk import dag, task
-from config.settings import URL
 import requests
 import logging
+import duckdb
 import pandas as pd
+
+URL = (
+    "https://api.open-meteo.com/v1/forecast?latitude=52.52&longitude=13.41"
+    "&current=temperature_2m,wind_speed_10m"
+    "&hourly=temperature_2m,relative_humidity_2m,wind_speed_10m"
+)
 
 @dag(
     dag_id="dag_with_http_operator",
@@ -39,6 +45,18 @@ def weather_alt_dag():
         logging.info(f"Wrote {out_path}")
         return data
 
+    @task
+    def load_to_warehouse():
+        db_path = "/opt/airflow/data/weather.duckdb"
+        csv_path = "/opt/airflow/data/weather_staging.csv"
+        conn = duckdb.connect(db_path)
+        conn.execute(f"""
+            create table if not exists weather_hourly as
+            select * from read_csv_auto('{csv_path}')""")
+        conn.close()
+        logging.info(f"Loaded {csv_path} into weather_hourly in {db_path}")
+
     get_and_log()
+    load_to_warehouse()
 
 weather_alt_dag()
