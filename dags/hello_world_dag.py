@@ -1,15 +1,23 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 from airflow import DAG
 from airflow.providers.standard.operators.python import PythonOperator
 import logging
 
-default_args = {
-        "owner": "airflow",
-        "start_date": datetime(2026, 4, 18)
-    }
-
 def run_my_func():
     logging.info("Running five minutes scheduler")
+
+def alert_on_failure(context):
+    dag_id = context["dag"].dag_id
+    task_id = context["task_instance"].task_id
+    logging.error(f"Alert: {dag_id}, {task_id} failed")
+
+default_args = {
+        "owner": "airflow",
+        "start_date": datetime(2026, 4, 18),
+        "retries": 3,
+        "retry_delay": timedelta(minutes=5),
+        "on_failure_callback": alert_on_failure,
+    }
 
 with DAG(
     dag_id="five_minute_schedule_dag",
