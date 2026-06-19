@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 from airflow.sdk import dag, task
 import requests
 import logging
@@ -11,12 +11,26 @@ URL = (
     "&hourly=temperature_2m,relative_humidity_2m,wind_speed_10m"
 )
 
+def alert_on_failure(context):
+    dag_id = context["dag"].dag_id
+    task_id = context["task_instance"].task_id
+    logging.error(f"Alert: {dag_id}, {task_id} failed")
+
+default_args = {
+    "owner": "airflow",
+    "retries": 3,
+    "retry_delay": timedelta(minutes=5),
+    "on_failure_callback": alert_on_failure
+}
+
 @dag(
     dag_id="dag_with_http_operator",
     start_date=datetime(2026, 4, 18),
     catchup=False,
     schedule="0 */6 * * *",
+    default_args=default_args
 )
+
 def weather_alt_dag():
     @task
     def get_and_log():
