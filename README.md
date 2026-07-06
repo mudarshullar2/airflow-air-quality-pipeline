@@ -16,6 +16,13 @@ AIRFLOW_GID=0
 ```
 
 ## Running
+Create an environment and install the required packages:
+```
+python -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+```
+
 Install docker desktop, then start airflow:
 ```
 docker compose up
