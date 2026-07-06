@@ -1,5 +1,4 @@
 import duckdb
-import pandas as pd
 import streamlit as st
 
 DB_PATH = "data/air_quality.duckdb"
