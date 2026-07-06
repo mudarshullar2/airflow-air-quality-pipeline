@@ -11,9 +11,21 @@ def load_data():
     conn = duckdb.connect(DB_PATH, read_only=True)
     df = conn.execute(
         """
-        select *
-        from air_quality_latest
-        order by datetime_utc
+        select 
+            m.datetime_utc,
+            m.value,
+            m.sensor_id,
+            s.display_name as pollutant,
+            s.parameter_name,
+            s.units,
+            l.name as station_name,
+            l.locality,
+            m.latitude,
+            m.longitude,
+        from air_quality_latest m
+        left join dim_sensors s on m.sensor_id = s.sensor_id
+        left join dim_locations l on m.location_id = l.location_id
+        order by m.datetime_utc
         """
     ).fetchdf()
 
@@ -26,34 +38,42 @@ except Exception as e:
     st.error(f"Read failed: {type(e).__name__}: {e}")
     st.stop()
 
+if df.empty:
+    st.warning("No data yet found")
+    st.stop()
+
+stations = sorted(df["station_name"].dropna().unique())
+if stations:
+   picked = st.multiselect("Filter by station", stations, default=stations)
+df = df[df["station_name"].isin(picked)]
+
 c1, c2, c3 = st.columns(3)
-c1.metric("Total readings", f"{len(df):,}")
-c2.metric("Sensors seen", df["sensor_id"].nunique())
+c1.metric("Total readings", f"{len(df)} readings")
+c2.metric("Pollutants tracked", df["pollutant"].nunique())
 c3.metric("Latest reading (UTC)", str(df["datetime_utc"].max()))
 
-st.subheader("Values over time, by sensor")
+st.subheader("Values over time, by pollutant")
 st.caption(
-    "Lines are labelled by sensor_id. The /latest response doesn't include the "
-    "pollutant name, so to show 'PM2.5' etc. you'd join sensor_id to sensor "
-    "metadata from /v3/locations/{id}"
+    "Lines are labelled by pollutant (from the sensor dimension table). "
+    "If multiple stations are selected, values are averaged per pollutant."
 )
-
-pivot = df.pivot_table(index="datetime_utc", columns="sensor_id", values="value")
+pivot = df.pivot_table(index="datetime_utc", columns="pollutant", values="value")
 st.line_chart(pivot)
 
-st.subheader("Most recent value per sensor")
+st.subheader("Most recent value per pollutant")
 latest = (
     df.sort_values("datetime_utc")
-    .groupby("sensor_id")
+    .groupby(["station_name", "pollutant"])
     .tail(1)
-    .loc[:, ["sensor_id", "datetime_utc", "value"]]
+    .loc[:, ["station_name", "pollutant", "value", "units", "datetime_utc"]]
+    .sort_values(["station_name", "pollutant"])
     .reset_index(drop=True)
 )
 st.dataframe(latest, use_container_width=True)
 
 coords = df[["latitude", "longitude"]].dropna().drop_duplicates()
 if not coords.empty:
-    st.subheader("Station location")
+    st.subheader("Station locations")
     st.map(coords)
 
 with st.expander("Raw data"):
