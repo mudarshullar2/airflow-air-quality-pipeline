@@ -29,15 +29,13 @@ docker compose up
 ```
 
 ## Airflow
-### get and log function
-![Get and Log](docs/get_and_log_airflow.png)
-
-### load to warehouse function
-![Load to Warehouse](docs/load_to_warehouse_airflow.png)
+![Get and Log](docs/airflow.png)
 
 To view the dashboard, run:
 ```
 streamlit run dashboard.py
 ```
 ## Streamlit Dashboard
-![Streamlit Dashboard](docs/streamlit_dashboard.png)
+![Streamlit Dashboard](docs/streamlit_dashboard_1.png)
+
+![Streamlit Dashboard](docs/streamlit_dashboard_2.png)
