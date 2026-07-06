@@ -4,7 +4,7 @@ from airflow.providers.standard.operators.python import PythonOperator
 import logging
 
 def run_my_func():
-    logging.info("Running five minutes scheduler")
+    logging.info("Running every 6 hours")
 
 def alert_on_failure(context):
     dag_id = context["dag"].dag_id
@@ -13,7 +13,7 @@ def alert_on_failure(context):
 
 default_args = {
         "owner": "airflow",
-        "start_date": datetime(2026, 4, 18),
+        "start_date": datetime(2026, 7, 6),
         "retries": 3,
         "retry_delay": timedelta(minutes=5),
         "on_failure_callback": alert_on_failure,
