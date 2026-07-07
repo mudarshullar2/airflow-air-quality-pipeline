@@ -1,6 +1,6 @@
 from datetime import datetime, timedelta
 from airflow import DAG
-from airflow.providers.standard.operators.python import PythonOperator
+from airflow.operators.python import PythonOperator
 import logging
 
 def run_my_func():
@@ -20,10 +20,10 @@ default_args = {
     }
 
 with DAG(
-    dag_id="five_minute_schedule_dag",
+    dag_id="ping_dag",
     default_args=default_args,
     schedule="*/5 * * * *",
-    catchup=False,
+    catchup=True,
 ) as dag:
     execute_python_task = PythonOperator(
         task_id="run_my_func",

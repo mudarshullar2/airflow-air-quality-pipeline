@@ -31,7 +31,7 @@ default_args = {
 @dag(
     dag_id="air_quality_elt_dag",
     start_date=datetime(2026, 7, 6),
-    catchup=False,
+    catchup=True,
     schedule="0 */6 * * *",
     default_args=default_args
 )
